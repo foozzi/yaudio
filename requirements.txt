@@ -1,0 +1,7 @@
+certifi==2017.4.17
+chardet==3.0.4
+idna==2.5
+PyQt5==5.8.2
+requests==2.18.1
+sip==4.19.2
+urllib3==1.21.1
