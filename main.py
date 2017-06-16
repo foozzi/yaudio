@@ -7,6 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import qtawesome as qta
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -28,17 +29,13 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_2.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("../Загрузки/play-button.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-        self.pushButton_2.setIcon(icon)
+        self.pushButton_2.setIcon(qta.icon('fa.play'))
         self.pushButton_2.setIconSize(QtCore.QSize(24, 24))
         self.pushButton_2.setObjectName("pushButton_2")
         self.horizontalLayout.addWidget(self.pushButton_2)
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton.setText("")
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("../Загрузки/stop.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-        self.pushButton.setIcon(icon1)
+        self.pushButton.setIcon(qta.icon('fa.stop'))
         self.pushButton.setIconSize(QtCore.QSize(24, 24))
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)

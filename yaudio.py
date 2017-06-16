@@ -9,6 +9,7 @@ import main
 import helpers.search
 from streamer import Streamer
 from functools import partial
+import qtawesome as qta
 
 class YAudio(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -21,7 +22,9 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_3.clicked.connect(self._search_music)
 		self.ui.pushButton.clicked.connect(self._stop)
 
-		self.is_stop = False
+		self.defaultTime = "00:00:00"
+
+		self.is_stop = True
 
 	def _search_music(self):
 		keywords = self.ui.lineEdit.text()
@@ -34,8 +37,20 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_3.setEnabled(False)
 		search_tracks = Search(self, keywords)
 
-	def updateProgress(self, proc):
-		pass
+	def updateProgress(self, proc, full):
+		self.ui.horizontalSlider.setMaximum(int(full/1000))
+		self.ui.horizontalSlider.setValue(int(proc/1000))
+		m, s = divmod(int(proc / 1000), 60)
+		if s >= 1:
+			np_btn = self._get_np_button()
+			np_btn.setEnabled(True)
+			self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
+			self.change_icon_button(np_btn, qta.icon('fa.pause'))
+			self.ui.pushButton_2.setEnabled(True)
+			self.ui.pushButton.setEnabled(True)
+		h, m = divmod(m, 60)
+		con_time_human = "%02d:%02d:%02d" % (h, m, s)
+		self.ui.label.setText(con_time_human)
 
 	def error_modal(self, message, title):
 		msg = QMessageBox()
@@ -50,11 +65,9 @@ class YAudio(QtWidgets.QMainWindow):
 		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 		self.pushButton_4 = QtWidgets.QPushButton()
 		self.pushButton_4.setSizePolicy(sizePolicy)
-		icon = QtGui.QIcon()
-		icon.addPixmap(QtGui.QPixmap("../Загрузки/play-button.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.pushButton_4.setIcon(icon)
-		self.pushButton_4.setIconSize(QtCore.QSize(24, 24))
-		self.pushButton_4.clicked.connect(partial(self._play, id=id))
+		self.pushButton_4.setIcon(qta.icon('fa.play'))
+		self.pushButton_4.setIconSize(QtCore.QSize(24, 24))		
+		self.pushButton_4.clicked.connect(partial(self._play, id=id, widget=self.pushButton_4))
 		self.label = QtWidgets.QLabel(title)
 		hbox_player.addWidget(self.pushButton_4)
 		hbox_player.addWidget(self.label)
@@ -68,46 +81,74 @@ class YAudio(QtWidgets.QMainWindow):
 				elif child.layout() is not None:
 					self.clearLayout(child.layout())
 
-	def _play(self, id):	
-		self.change_icon_button(self.ui.pushButton_2, "../Загрузки/pause.png")
+	def _set_np_button(self, widget):
+		self.nowPlaying = widget
+
+	def _get_np_button(self):
+		if hasattr(self, 'nowPlaying'):
+			return self.nowPlaying
+		return None
+
+	def _play(self, id, widget):
+		self.ui.pushButton_2.setEnabled(False)
+		self.ui.pushButton.setEnabled(False)
+		widget.setEnabled(False)
+		self.change_icon_button(self.ui.pushButton_2, spin=True)
+		self.change_icon_button(widget, spin=True)
+		self._set_np_button(widget)
 		self._playback = Play(self, id)
-		self.timer = QTimer(self)
-		self.timer.timeout.connect(self._playback.check_stop)
-		self.timer.setInterval(500)
-		self.timer.start()
+		self.check_position_t = QTimer(self)
+		self.check_position_t.timeout.connect(self._playback._get_position)
+		self.check_position_t.setInterval(1000)
+		self.check_position_t.start()
+			
 
 	def _stop(self):
+		self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.play'))
+		self.change_icon_button(self._get_np_button(), qta.icon('fa.play'))
+		self.ui.horizontalSlider.setValue(0)
+		self.ui.label.setText(self.defaultTime)
 		self.is_stop = True
+		self.check_position_t.stop()
+		self._playback.stop()
+		return
 
-	def change_icon_button(self, widget, icon_path):
-		icon = QtGui.QIcon()
-		icon.addPixmap(QtGui.QPixmap(icon_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+	def change_icon_button(self, widget, icon=None, spin=False):
+		if spin == True:
+			icon = qta.icon('fa.spinner',
+                animation=qta.Spin(widget))
 		widget.setIcon(icon)
 		widget.setIconSize(QtCore.QSize(24, 24))
 
-class Play(QtCore.QThread):
-	sig = QtCore.pyqtSignal(int)
-	
+class Play(QtCore.QThread):	
+	sig = QtCore.pyqtSignal(int, int)
+
 	def __init__(self, parent=None, *data):
 		super(Play, self).__init__(parent)	
 
 		self.parent = parent
-		self.id = data[0]
-		# self.sig.connect(self.parent.updateProgress)
-		
-		self.start()		
+		self.id = data[0]		
 
-	def run(self):
+		self.parent.is_stop = False
+
+		self.sig.connect(self.parent.updateProgress)
+		self.playback = Streamer()
+		self.start()
+
+	def run(self):						
 		uri = helpers.search.get_youtube_streams(self.id)
-		self.playback = Streamer(uri['audio'])
-		
-		
-		self.playback.play()
+		self.playback.play(uri['audio'])
 
-	def check_stop(self):		
-		if self.parent.is_stop == True:
-		 	self.playback.stop()
-		 	self.parent.is_stop = False
+	def stop(self):
+		self.playback.stop()
+		self.exit()	
+		return
+
+	def _get_position(self):
+		length = self.playback.player.get_time()
+		full_length = self.playback.player.get_length()
+		self.sig.emit(length, full_length)
+		# self.parent.ui.horizontalSlider.setRange(0, length / 1000.0)
 			
 
 class Search(QtCore.QThread):
