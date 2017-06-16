@@ -9,15 +9,17 @@ class Streamer():
 
 
 	def stop(self):
-		pass
+		self.player.stop()
+		return
 
 	def pause(self):
 		pass
 
-	def play(self):
+	def play(self):		
 		r = requests.get(self.uri)
 		if r.status_code == 200:			
-			self.vlcInstance = vlc.Instance("--no-xlib")
+			print('play')
+			self.vlcInstance = vlc.Instance("--no-xlib --verbose 2")
 			self.player = self.vlcInstance.media_player_new()
 
 			self.player.set_mrl(self.uri)

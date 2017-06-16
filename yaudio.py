@@ -2,6 +2,7 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMessageBox
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtCore import QTimer
 import os
 # template main
 import main
@@ -19,6 +20,8 @@ class YAudio(QtWidgets.QMainWindow):
 
 		self.ui.pushButton_3.clicked.connect(self._search_music)
 		self.ui.pushButton.clicked.connect(self._stop)
+
+		self.is_stop = False
 
 	def _search_music(self):
 		keywords = self.ui.lineEdit.text()
@@ -65,12 +68,22 @@ class YAudio(QtWidgets.QMainWindow):
 				elif child.layout() is not None:
 					self.clearLayout(child.layout())
 
-	def _play(self, id):
-		print(id)
+	def _play(self, id):	
+		self.change_icon_button(self.ui.pushButton_2, "../Загрузки/pause.png")
 		self._playback = Play(self, id)
+		self.timer = QTimer(self)
+		self.timer.timeout.connect(self._playback.check_stop)
+		self.timer.setInterval(500)
+		self.timer.start()
 
 	def _stop(self):
-		pass
+		self.is_stop = True
+
+	def change_icon_button(self, widget, icon_path):
+		icon = QtGui.QIcon()
+		icon.addPixmap(QtGui.QPixmap(icon_path), QtGui.QIcon.Normal, QtGui.QIcon.On)
+		widget.setIcon(icon)
+		widget.setIconSize(QtCore.QSize(24, 24))
 
 class Play(QtCore.QThread):
 	sig = QtCore.pyqtSignal(int)
@@ -80,15 +93,22 @@ class Play(QtCore.QThread):
 
 		self.parent = parent
 		self.id = data[0]
-		self.sig.connect(self.parent.updateProgress)
+		# self.sig.connect(self.parent.updateProgress)
 		
-
-		self.start()
+		self.start()		
 
 	def run(self):
 		uri = helpers.search.get_youtube_streams(self.id)
 		self.playback = Streamer(uri['audio'])
+		
+		
 		self.playback.play()
+
+	def check_stop(self):		
+		if self.parent.is_stop == True:
+		 	self.playback.stop()
+		 	self.parent.is_stop = False
+			
 
 class Search(QtCore.QThread):
 	sig = QtCore.pyqtSignal(str, str)

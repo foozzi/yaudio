@@ -98,7 +98,7 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "YAudio"))
         self.label.setText(_translate("MainWindow", "00:00:00"))
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "Typing search words"))
 
