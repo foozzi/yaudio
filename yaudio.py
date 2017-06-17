@@ -26,6 +26,10 @@ class YAudio(QtWidgets.QMainWindow):
 
 		self.is_stop = True
 
+		self.ui.pushButton_2.setEnabled(False)
+		self.ui.pushButton.setEnabled(False)
+		self.ui.horizontalSlider.setEnabled(False)
+
 	def _search_music(self):
 		keywords = self.ui.lineEdit.text()
 		if len(keywords) < 1:
@@ -38,6 +42,7 @@ class YAudio(QtWidgets.QMainWindow):
 		search_tracks = Search(self, keywords)
 
 	def updateProgress(self, proc, full):
+		self.ui.horizontalSlider.setEnabled(True)
 		self.ui.horizontalSlider.setMaximum(int(full/1000))
 		self.ui.horizontalSlider.setValue(int(proc/1000))
 		m, s = divmod(int(proc / 1000), 60)
@@ -90,6 +95,8 @@ class YAudio(QtWidgets.QMainWindow):
 		return None
 
 	def _play(self, id, widget):
+		if self.is_stop == False:
+			self._stop()
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(False)
 		widget.setEnabled(False)
@@ -104,13 +111,16 @@ class YAudio(QtWidgets.QMainWindow):
 			
 
 	def _stop(self):
+		np_b = self._get_np_button()
+		np_b.setEnabled(True)
 		self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.play'))
-		self.change_icon_button(self._get_np_button(), qta.icon('fa.play'))
+		self.change_icon_button(np_b, qta.icon('fa.play'))
 		self.ui.horizontalSlider.setValue(0)
 		self.ui.label.setText(self.defaultTime)
 		self.is_stop = True
 		self.check_position_t.stop()
 		self._playback.stop()
+		self._playback.terminate()
 		return
 
 	def change_icon_button(self, widget, icon=None, spin=False):
@@ -135,20 +145,17 @@ class Play(QtCore.QThread):
 		self.playback = Streamer()
 		self.start()
 
-	def run(self):						
+	def run(self):				
 		uri = helpers.search.get_youtube_streams(self.id)
 		self.playback.play(uri['audio'])
 
 	def stop(self):
 		self.playback.stop()
-		self.exit()	
-		return
 
 	def _get_position(self):
 		length = self.playback.player.get_time()
 		full_length = self.playback.player.get_length()
 		self.sig.emit(length, full_length)
-		# self.parent.ui.horizontalSlider.setRange(0, length / 1000.0)
 			
 
 class Search(QtCore.QThread):
