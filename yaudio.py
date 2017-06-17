@@ -38,7 +38,7 @@ class YAudio(QtWidgets.QMainWindow):
 	def keyPressEvent(self, e):		
 		if e.key() == Qt.Key_Escape:
 			self.close()
-		elif e.key() == Qt.Key_Return:
+		elif e.key() == Qt.Key_Return and self.ui.lineEdit.hasFocus():
 			self._search_music()
 
 	def _search_music(self, clear=True):
