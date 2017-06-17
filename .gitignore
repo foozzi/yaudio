@@ -5,3 +5,5 @@ share/
 helpers/__pycache__/
 include/
 pip-selfcheck.json
+main.ui
+
