@@ -9,8 +9,8 @@ from .networking import open_page
 
 
 INF = float("inf")
-SEARCH_SUFFIX = ' (song|full song|remix|karaoke|instrumental)'
-
+# SEARCH_SUFFIX = ' (song|full song|remix|karaoke|instrumental)'
+SEARCH_SUFFIX = ''
 def exe(command):
     command = command.strip()
     c = command.split()

@@ -2,11 +2,12 @@ import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMessageBox, QFrame
 from PyQt5 import QtCore, QtGui
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, Qt
 import os
 # template main
 import main
 import helpers.search
+import helpers.text
 from streamer import Streamer
 from functools import partial
 import qtawesome as qta
@@ -22,14 +23,23 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_3.clicked.connect(partial(self._search_music, clear=True))
 		self.ui.pushButton.clicked.connect(self._stop)
 
+		self.len_title_text = 80
+
 		self.defaultTime = "00:00:00"
 		self.n_page = None
 
 		self.is_stop = True
+		self.is_pause = False
 
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(False)
 		self.ui.horizontalSlider.setEnabled(False)
+
+	def keyPressEvent(self, e):		
+		if e.key() == Qt.Key_Escape:
+			self.close()
+		elif e.key() == Qt.Key_Return:
+			self._search_music()
 
 	def _search_music(self, clear=True):
 		keywords = self.ui.lineEdit.text()
@@ -86,7 +96,9 @@ class YAudio(QtWidgets.QMainWindow):
 		self.pushButton_4.setIcon(qta.icon('fa.play'))
 		self.pushButton_4.setIconSize(QtCore.QSize(24, 24))		
 		self.pushButton_4.clicked.connect(partial(self._play, id=id, widget=self.pushButton_4))
-		self.label = QtWidgets.QLabel(title)
+		title_cut = helpers.text.truncate(title, self.len_title_text).strip()
+		self.label = QtWidgets.QLabel(title_cut)
+		self.label.setToolTip(title)
 		hbox_player.addWidget(self.pushButton_4)
 		hbox_player.addWidget(self.label)
 		if last == True:
@@ -145,7 +157,6 @@ class YAudio(QtWidgets.QMainWindow):
 		self.is_stop = True
 		self.check_position_t.stop()
 		self._playback.stop()
-		# self._playback.terminate()
 		return
 
 	def change_icon_button(self, widget, icon=None, spin=False):
