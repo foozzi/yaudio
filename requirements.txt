@@ -1,6 +1,9 @@
 certifi==2017.4.17
 chardet==3.0.4
+furl==1.0.0
 idna==2.5
+lxml==3.8.0
+orderedmultidict==0.7.11
 PyQt5==5.8.2
 QtAwesome==0.4.4
 QtPy==1.2.1
