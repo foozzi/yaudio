@@ -1,6 +1,6 @@
 import sys
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMessageBox, QFrame
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer
 import os
@@ -19,10 +19,11 @@ class YAudio(QtWidgets.QMainWindow):
 
 		self.vbox = QtWidgets.QVBoxLayout(self.ui.scrollAreaWidgetContents)
 
-		self.ui.pushButton_3.clicked.connect(self._search_music)
+		self.ui.pushButton_3.clicked.connect(partial(self._search_music, clear=True))
 		self.ui.pushButton.clicked.connect(self._stop)
 
 		self.defaultTime = "00:00:00"
+		self.n_page = None
 
 		self.is_stop = True
 
@@ -30,16 +31,28 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton.setEnabled(False)
 		self.ui.horizontalSlider.setEnabled(False)
 
-	def _search_music(self):
+	def _search_music(self, clear=True):
 		keywords = self.ui.lineEdit.text()
 		if len(keywords) < 1:
 			self.error_modal('Enter the keywords for search', 'Search error')
 			return
 
-		self.clearLayout(self.vbox)
+		# if next page
+		next = False
+
+		# if load more, not clean playlist
+		if clear == True:
+			self.clearLayout(self.vbox)			
+		else:
+			next = True
+			self.clearLayout(self.hbox_last_container)
+			sep_next = QFrame()
+			sep_next.setFrameShape(QFrame.HLine)
+			sep_next.setFrameShadow(QFrame.Sunken)
+			self.hbox_last_container.addWidget(sep_next)
 
 		self.ui.pushButton_3.setEnabled(False)
-		search_tracks = Search(self, keywords)
+		search_tracks = Search(self, keywords, next)
 
 	def updateProgress(self, proc, full):
 		self.ui.horizontalSlider.setEnabled(True)
@@ -64,7 +77,7 @@ class YAudio(QtWidgets.QMainWindow):
 		msg.setWindowTitle(title)
 		msg.exec_()
 
-	def add_tracks_from_search(self, title, id):
+	def add_tracks_from_search(self, title, id, last=False):
 		hbox_player = QtWidgets.QHBoxLayout()
 		self.vbox.addLayout(hbox_player)
 		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
@@ -76,6 +89,14 @@ class YAudio(QtWidgets.QMainWindow):
 		self.label = QtWidgets.QLabel(title)
 		hbox_player.addWidget(self.pushButton_4)
 		hbox_player.addWidget(self.label)
+		if last == True:
+			self.hbox_last_container = QtWidgets.QHBoxLayout()
+			self.vbox.addLayout(self.hbox_last_container)
+			self.pushButton_loadMore = QtWidgets.QPushButton("Load More")
+			self.pushButton_loadMore.clicked.connect(
+				partial(self._search_music, clear=False))
+			self.hbox_last_container.addWidget(self.pushButton_loadMore)
+
 
 	def clearLayout(self, layout):
 		if layout != None:
@@ -98,7 +119,7 @@ class YAudio(QtWidgets.QMainWindow):
 		if self.is_stop == False:
 			self._stop()
 		self.ui.pushButton_2.setEnabled(False)
-		self.ui.pushButton.setEnabled(False)
+		self.ui.pushButton.setEnabled(True)
 		widget.setEnabled(False)
 		self.change_icon_button(self.ui.pushButton_2, spin=True)
 		self.change_icon_button(widget, spin=True)
@@ -108,6 +129,10 @@ class YAudio(QtWidgets.QMainWindow):
 		self.check_position_t.timeout.connect(self._playback._get_position)
 		self.check_position_t.setInterval(1000)
 		self.check_position_t.start()
+
+	def _pause(self):
+		if not self.is_stop:
+			pass
 			
 
 	def _stop(self):
@@ -120,13 +145,13 @@ class YAudio(QtWidgets.QMainWindow):
 		self.is_stop = True
 		self.check_position_t.stop()
 		self._playback.stop()
-		self._playback.terminate()
+		# self._playback.terminate()
 		return
 
 	def change_icon_button(self, widget, icon=None, spin=False):
 		if spin == True:
 			icon = qta.icon('fa.spinner',
-                animation=qta.Spin(widget))
+				animation=qta.Spin(widget))
 		widget.setIcon(icon)
 		widget.setIconSize(QtCore.QSize(24, 24))
 
@@ -151,6 +176,8 @@ class Play(QtCore.QThread):
 
 	def stop(self):
 		self.playback.stop()
+		self.terminate()
+		return
 
 	def _get_position(self):
 		length = self.playback.player.get_time()
@@ -159,7 +186,7 @@ class Play(QtCore.QThread):
 			
 
 class Search(QtCore.QThread):
-	sig = QtCore.pyqtSignal(str, str)
+	sig = QtCore.pyqtSignal(str, str, bool)
 
 	def __init__(self, parent=None, *data):
 		super(Search, self).__init__(parent)
@@ -168,17 +195,32 @@ class Search(QtCore.QThread):
 		self.sig.connect(self.parent.add_tracks_from_search)
 
 		self.keyword = data[0]
+		self.next = data[1]
 		self.start()
 
 	def run(self):
-		raw_html = helpers.search.get_search_results_html(self.keyword)		
-		vids = helpers.search.get_videos(raw_html)				
+		raw_html = helpers.search.get_search_results_html(
+			self.keyword, False if not self.next else self.parent.n_page)		
+		vids, self.parent.n_page = helpers.search.get_videos(raw_html)				
+		# flag for last track
+		last = False
 		
-		for _ in vids:				
-			attrs = helpers.search.get_video_attrs(_)	
-			if attrs != None:				
-				self.sig.emit(attrs['title'], attrs['id'])
 		
+		i = 0
+		clear_vids = []
+		# ...fix lol
+		for _ in vids:						
+			attrs = helpers.search.get_video_attrs(_)				
+			if attrs != None:
+				clear_vids.append(attrs)
+		
+		len_vids = len(clear_vids)
+		for _ in clear_vids:
+			i = i + 1
+			if i == len_vids:
+				last = True	
+			self.sig.emit(_['title'], _['id'], last)				
+
 		self.parent.ui.pushButton_3.setEnabled(True)
 
 	def __del__(self):

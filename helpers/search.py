@@ -1,5 +1,7 @@
 import re
 import subprocess
+from lxml import html as html_
+from furl import furl
 
 from .encryption import get_key, encode_data
 
@@ -40,24 +42,32 @@ def html_unescape(text):
         title = text
     return title
 
-def get_search_results_html(search_term):
+def get_search_results_html(search_term, next=False):
     """
     gets search results html code for a search term
-    """
+    """    
     proxy_search_term = search_term + SEARCH_SUFFIX
-    link = 'https://www.youtube.com/results?search_query=%s' % proxy_search_term
-    link += '&sp=EgIQAQ%253D%253D'  # for only video
+    link = 'https://www.youtube.com/results?q=%s' % proxy_search_term
+    link += '&sp=EgIQAQ%253D%253D' if not next else '&sp=%s' % next  # for only video
     link += '&gl=IN'
     raw_html = open_page(link)
     return raw_html
 
+def get_n_page(html):
+    n_page = html_.fromstring(html)
+    page_items = n_page.xpath('//div[contains(@class, "search-pager")]/a[position()>=1 and position()<=last()]/.')
+    n_page = n_page.xpath('//div[contains(@class, "search-pager")]/a[position()>=1 and position()<=last()]/.')[len(page_items)-1].attrib['href']
+    f = furl(n_page) 
+    return f.args['sp']
 
 def get_videos(html):
     """
     separate videos in html
     """
+    n_page = get_n_page(html)
     html = html.decode('utf-8')
     first = html.find('yt-lockup-tile')
+   
     html = html[first + 2:]
     vid = []
     while True:
@@ -69,7 +79,7 @@ def get_videos(html):
         vid.append(html[:pos + 2])
         html = html[pos + 3:]
 
-    return vid
+    return vid, n_page
 
 
 def get_video_attrs(html, removeLongResult=True):
