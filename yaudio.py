@@ -42,9 +42,17 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.verticalSlider.setTickInterval(1)
 		self.ui.label_2.setText('<img src="./img/volume.png" />')
 
+		self.ui.horizontalSlider.sliderMoved.connect(self.changePosition)
+
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(False)
 		self.ui.horizontalSlider.setEnabled(False)
+
+	def changePosition(self, value):
+		if not self.is_stop:
+			self.check_position_t.stop()
+			self._playback.set_position(value / 1000.0)
+			self.check_position_t.start()
 
 	def volumeChanged(self, value):
 		self.volume = value
@@ -89,11 +97,9 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_3.setEnabled(False)
 		search_tracks = Search(self, keywords, next)
 
-	def updateProgress(self, proc, full):
-		self.ui.horizontalSlider.setEnabled(True)
-		self.ui.horizontalSlider.setMaximum(int(full/1000))
-		self.ui.horizontalSlider.setValue(int(proc/1000))
-		m, s = divmod(int(proc / 1000), 60)
+	def updateProgress(self, proc, full):		
+		self.ui.horizontalSlider.setValue(proc*1000.0)
+		m, s = divmod(int(full / 1000), 60)
 		if s >= 1:
 			# if not paused, not change icons 
 			if not self.is_pause:
@@ -103,6 +109,7 @@ class YAudio(QtWidgets.QMainWindow):
 			self.ui.pushButton.setEnabled(True)
 		h, m = divmod(m, 60)
 		con_time_human = "%02d:%02d:%02d" % (h, m, s)
+
 		self.ui.label.setText(con_time_human)
 
 	def error_modal(self, message, title):
@@ -163,6 +170,9 @@ class YAudio(QtWidgets.QMainWindow):
 		self.np = id
 		if self.is_stop == False:
 			self._stop()
+
+		self.ui.horizontalSlider.setEnabled(True)
+		self.ui.horizontalSlider.setMaximum(1000)
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(True)
 		widget.setEnabled(False)
@@ -215,7 +225,7 @@ class YAudio(QtWidgets.QMainWindow):
 		widget.setIconSize(QtCore.QSize(24, 24))
 
 class Play(QtCore.QThread):	
-	sig = QtCore.pyqtSignal(int, int)
+	sig = QtCore.pyqtSignal(float, int)
 
 	def __init__(self, parent=None, *data):
 		super(Play, self).__init__(parent)	
@@ -239,14 +249,17 @@ class Play(QtCore.QThread):
 	def set_volume(self, value):
 		self.playback.player.audio_set_volume(value)
 
+	def set_position(self, value):
+		self.playback.player.set_position(value)
+
 	def stop(self):
 		self.playback.stop()
 		self.terminate()
 		return
 
 	def _get_position(self):
-		length = self.playback.player.get_time()
-		full_length = self.playback.player.get_length()
+		length = self.playback.player.get_position()
+		full_length = self.playback.player.get_time()
 		self.sig.emit(length, full_length)
 			
 
