@@ -55,6 +55,11 @@ class YAudio(QtWidgets.QMainWindow):
 
 		# if load more, not clean playlist
 		if clear == True:
+			# clear icon from the current track,
+			# couse that call error update animateion
+			np_b = self._get_np_button()
+			if np_b:
+				np_b.setIcon(QtGui.QIcon())
 			self.clearLayout(self.vbox)			
 		else:
 			next = True
@@ -73,12 +78,10 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.horizontalSlider.setValue(int(proc/1000))
 		m, s = divmod(int(proc / 1000), 60)
 		if s >= 1:
-			np_btn = self._get_np_button()
-			np_btn.setEnabled(True)
 			# if not paused, not change icons 
 			if not self.is_pause:
 				self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
-				self.change_icon_button(np_btn, qta.icon('fa.pause'))
+				# self.change_icon_button(np_btn, qta.icon('fa.pause'))
 			self.ui.pushButton_2.setEnabled(True)
 			self.ui.pushButton.setEnabled(True)
 		h, m = divmod(m, 60)
@@ -146,8 +149,9 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(True)
 		widget.setEnabled(False)
+		widget.setFlat(True)
 		self.change_icon_button(self.ui.pushButton_2, spin=True)
-		self.change_icon_button(widget, spin=True)
+		# self.change_icon_button(widget, spin=True)
 		self._set_np_button(widget)
 		self._playback = Play(self, id)
 		self.check_position_t = QTimer(self)
@@ -170,10 +174,15 @@ class YAudio(QtWidgets.QMainWindow):
 			
 
 	def _stop(self):
-		np_b = self._get_np_button()
-		np_b.setEnabled(True)
+		try:
+			np_b = self._get_np_button()
+			np_b.setEnabled(True)
+			np_b.setFlat(False)
+		except Exception as e:
+			pass
+	
 		self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.play'))
-		self.change_icon_button(np_b, qta.icon('fa.play'))
+		# self.change_icon_button(np_b, qta.icon('fa.play'))
 		self.ui.horizontalSlider.setValue(0)
 		self.ui.label.setText(self.defaultTime)
 		self.is_stop = True
