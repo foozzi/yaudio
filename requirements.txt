@@ -1,5 +1,6 @@
 certifi==2017.4.17
 chardet==3.0.4
+configparser==3.5.0
 furl==1.0.0
 idna==2.5
 lxml==3.8.0

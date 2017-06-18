@@ -5,7 +5,7 @@ share/
 helpers/__pycache__/
 include/
 pip-selfcheck.json
-main.ui
-main2.py
-about.ui
 images.qrc
+yaudio.spec
+ui/
+main2.py

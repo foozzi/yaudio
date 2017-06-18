@@ -23,7 +23,7 @@ def exe(command):
 
 def get_youtube_streams(id):
     url = 'https://www.youtube.com/watch?v=%s' % id
-    cli = "../youtube-dl -g {}".format(url)
+    cli = "./youtube-dl -g {}".format(url)
     output, error = exe(cli)
 
     stream_urls = output.split("\n")

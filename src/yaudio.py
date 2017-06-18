@@ -1,24 +1,20 @@
 import sys
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (QApplication, QWidget, QInputDialog, 
-	QLineEdit, QMessageBox, QFrame)
+	QLineEdit, QFrame)
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, Qt
-import os
+from functools import partial
 # template main
 import main
-import about
+# helpers
 import helpers.search
 import helpers.text
+import helpers.gui
+# player wrapper
 from streamer import Streamer
-from functools import partial
-import qtawesome as qta
+import configparser
 
-class About(QtWidgets.QDialog) :
-    def __init__(self, parent):
-        super(About, self).__init__(parent)
-        self.ui = about.Ui_Form()
-        self.ui.setupUi(self)
 
 class YAudio(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -26,14 +22,17 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui = main.Ui_MainWindow()
 		self.ui.setupUi(self)
 
+		parser = configparser.ConfigParser()
+		parser.read('config.cfg')
+
 		self.vbox = QtWidgets.QVBoxLayout(self.ui.scrollAreaWidgetContents)
 
 		self.ui.pushButton_3.clicked.connect(partial(self._search_music, clear=True))
 		self.ui.pushButton_2.clicked.connect(self._pause)
 		self.ui.pushButton.clicked.connect(self._stop)
 
-		self.len_title_text = 80
-		self.volume = 70
+		self.len_title_text = parser['YAudio']['len_title_text']
+		self.volume = parser['YAudio']['volume']
 
 		self.defaultTime = "00:00:00"
 		self.n_page = None
@@ -42,7 +41,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.is_pause = False
 		self.np = None
 
-		self.ui.verticalSlider.setValue(self.volume)
+		self.ui.verticalSlider.setValue(int(self.volume))
 		self.ui.verticalSlider.setToolTip('Volume')
 		self.ui.verticalSlider.valueChanged.connect(self.volumeChanged)
 		self.ui.verticalSlider.setTickPosition(QtWidgets.QSlider.TicksBothSides)
@@ -55,7 +54,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton.setEnabled(False)
 		self.ui.horizontalSlider.setEnabled(False)
 
-		self.ui.actionsd.triggered.connect(self.open_about)
+		self.ui.actionsd.triggered.connect(partial(helpers.gui.open_about, self=self))
 
 	def changePosition(self, value):
 		if not self.is_stop:
@@ -81,7 +80,7 @@ class YAudio(QtWidgets.QMainWindow):
 	def _search_music(self, clear=True):
 		keywords = self.ui.lineEdit.text()
 		if len(keywords) < 1:
-			self.error_modal('Enter the keywords for search', 'Search error')
+			helpers.gui.error_modal('Enter the keywords for search', 'Search error')
 			return
 
 		# if next page
@@ -94,10 +93,10 @@ class YAudio(QtWidgets.QMainWindow):
 			np_b = self._get_np_button()
 			if np_b:
 				np_b.setIcon(QtGui.QIcon())
-			self.clearLayout(self.vbox)			
+			helpers.gui.clearLayout(self.vbox)			
 		else:
 			next = True
-			self.clearLayout(self.hbox_last_container)
+			helpers.gui.clearLayout(self.hbox_last_container)
 			sep_next = QFrame()
 			sep_next.setFrameShape(QFrame.HLine)
 			sep_next.setFrameShadow(QFrame.Sunken)
@@ -112,21 +111,13 @@ class YAudio(QtWidgets.QMainWindow):
 		if s >= 1:
 			# if not paused, not change icons 
 			if not self.is_pause:
-				self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
-				# self.change_icon_button(np_btn, qta.icon('fa.pause'))
+				helpers.gui.change_icon_button(self.ui.pushButton_2, 'fa.pause')
 			self.ui.pushButton_2.setEnabled(True)
 			self.ui.pushButton.setEnabled(True)
 		h, m = divmod(m, 60)
 		con_time_human = "%02d:%02d:%02d" % (h, m, s)
 
 		self.ui.label.setText(con_time_human)
-
-	def error_modal(self, message, title):
-		msg = QMessageBox()
-		msg.setIcon(QMessageBox.Information)
-		msg.setText(message)
-		msg.setWindowTitle(title)
-		msg.exec_()
 
 	def add_tracks_from_search(self, title, id, last=False):
 		hbox_player = QtWidgets.QHBoxLayout()
@@ -135,11 +126,10 @@ class YAudio(QtWidgets.QMainWindow):
 			QtWidgets.QSizePolicy.Fixed)
 		self.pushButton_4 = QtWidgets.QPushButton()
 		self.pushButton_4.setSizePolicy(sizePolicy)
-		self.pushButton_4.setIcon(qta.icon('fa.play'))
-		self.pushButton_4.setIconSize(QtCore.QSize(24, 24))	
+		helpers.gui.change_icon_button(self.pushButton_4, 'fa.play')
 		self.pushButton_4.clicked.connect(partial(self._play, id=id, 
 			widget=self.pushButton_4))
-		title_cut = helpers.text.truncate(title, self.len_title_text).strip()
+		title_cut = helpers.text.truncate(title, int(self.len_title_text)).strip()
 		self.label = QtWidgets.QLabel(title_cut)
 		self.label.setToolTip(title)
 		hbox_player.addWidget(self.pushButton_4)
@@ -152,15 +142,6 @@ class YAudio(QtWidgets.QMainWindow):
 				partial(self._search_music, clear=False))
 			self.hbox_last_container.addWidget(self.pushButton_loadMore)
 
-
-	def clearLayout(self, layout):
-		if layout != None:
-			while layout.count():
-				child = layout.takeAt(0)
-				if child.widget() is not None:
-					child.widget().deleteLater()
-				elif child.layout() is not None:
-					self.clearLayout(child.layout())
 
 	def _set_np_button(self, widget):
 		self.nowPlaying = widget
@@ -186,8 +167,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton.setEnabled(True)
 		widget.setEnabled(False)
 		widget.setFlat(True)
-		self.change_icon_button(self.ui.pushButton_2, spin=True)
-		# self.change_icon_button(widget, spin=True)
+		helpers.gui.change_icon_button(self.ui.pushButton_2, spin=True)
 		self._set_np_button(widget)
 		self._playback = Play(self, id)
 		self.check_position_t = QTimer(self)
@@ -200,13 +180,13 @@ class YAudio(QtWidgets.QMainWindow):
 		if not self.is_stop and not self.is_pause:
 			self._playback.pause()
 			self.is_pause = True			
-			self.change_icon_button(np_b, qta.icon('fa.play'))
-			self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.play'))
+			helpers.gui.change_icon_button(np_b, 'fa.play')
+			helpers.gui.change_icon_button(self.ui.pushButton_2, 'fa.play')
 		elif not self.is_stop and self.is_pause:
 			self._playback.playback.unpause()
 			self.is_pause = False
-			self.change_icon_button(np_b, qta.icon('fa.pause'))
-			self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
+			helpers.gui.change_icon_button(np_b, 'fa.pause')
+			helpers.gui.change_icon_button(self.ui.pushButton_2, 'fa.pause')
 			
 
 	def _stop(self):
@@ -217,25 +197,13 @@ class YAudio(QtWidgets.QMainWindow):
 		except Exception as e:
 			pass
 	
-		self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.play'))
-		# self.change_icon_button(np_b, qta.icon('fa.play'))
+		helpers.gui.change_icon_button(self.ui.pushButton_2, 'fa.play')
 		self.ui.horizontalSlider.setValue(0)
 		self.ui.label.setText(self.defaultTime)
 		self.is_stop = True
 		self.check_position_t.stop()
 		self._playback.stop()
-		return
-
-	def change_icon_button(self, widget, icon=None, spin=False):
-		if spin == True:
-			icon = qta.icon('fa.spinner',
-				animation=qta.Spin(widget))
-		widget.setIcon(icon)
-		widget.setIconSize(QtCore.QSize(24, 24))
-
-	def open_about(self):
-		about_ = About(self)
-		about_.exec()
+		return	
 
 
 class Play(QtCore.QThread):	
@@ -314,10 +282,6 @@ class Search(QtCore.QThread):
 			self.sig.emit(_['title'], _['id'], last)				
 
 		self.parent.ui.pushButton_3.setEnabled(True)
-
-	def __del__(self):
-		self.exiting = True
-		self.wait()
 
 app = QtWidgets.QApplication(sys.argv)
 

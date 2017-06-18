@@ -7,6 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import configparser
 
 class Ui_Form(object):
     def setupUi(self, Form):
@@ -27,8 +28,11 @@ class Ui_Form(object):
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
+        parser = configparser.ConfigParser()
+        parser.read('config.cfg')
+
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "About"))
         self.label_2.setText(_translate("Form", "<html><head/><body><p><img width=100 src=\"./img/about.png\"/></p></body></html>"))
-        self.label.setText(_translate("Form", "<html><head/><body><p><span style=\" font-weight:600;\">YAudio</span> (v. 0.0.5a)</p><p>Audio player for youtube streaming with </p><p>search by keywords</p><p>Home page: <a href=\"https://github.com/foozzi/yaudio\"><span style=\" text-decoration: underline; color:#0000ff;\">YAudio Github</span></a></p><p>Author: Igor Tkachenko</p><p>Twitter Author: <a href=\"https://twitter.com/foozzi\"><span style=\" text-decoration: underline; color:#0000ff;\">foozzi</span></a></p></body></html>"))
+        self.label.setText(_translate("Form", "<html><head/><body><p><span style=\" font-weight:600;\">YAudio</span> (v. "+parser['YAudio']['version']+")</p><p>Audio player for youtube streaming with </p><p>search by keywords</p><p>Home page: <a href=\"https://github.com/foozzi/yaudio\"><span style=\" text-decoration: underline; color:#0000ff;\">YAudio Github</span></a></p><p>Author: Igor Tkachenko</p><p>Twitter Author: <a href=\"https://twitter.com/foozzi\"><span style=\" text-decoration: underline; color:#0000ff;\">foozzi</span></a></p></body></html>"))
 
