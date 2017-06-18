@@ -29,11 +29,12 @@ class Streamer():
 	def get_position(self):
 		return self.player.get_position()
 
-	def play(self, uri):
+	def play(self, uri, volume):
 		print('play')
 		m=self.vlcInstance.media_new(uri)
 		
 		self.player.set_media(m)
+		self.player.audio_set_volume(volume)
 		m.release()
 		self.player.play()
 		while self.flag_stop == True: # Wait until the end of the first media has been reached...

@@ -26,6 +26,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton.clicked.connect(self._stop)
 
 		self.len_title_text = 80
+		self.volume = 70
 
 		self.defaultTime = "00:00:00"
 		self.n_page = None
@@ -34,9 +35,25 @@ class YAudio(QtWidgets.QMainWindow):
 		self.is_pause = False
 		self.np = None
 
+		self.ui.verticalSlider.setValue(self.volume)
+		self.ui.verticalSlider.setToolTip('Volume')
+		self.ui.verticalSlider.valueChanged.connect(self.volumeChanged)
+		self.ui.verticalSlider.setTickPosition(QtWidgets.QSlider.TicksBothSides)
+		self.ui.verticalSlider.setTickInterval(1)
+		self.ui.label_2.setText('<img src="./img/volume.png" />')
+
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(False)
 		self.ui.horizontalSlider.setEnabled(False)
+
+	def volumeChanged(self, value):
+		self.volume = value
+		if self.volume <= 1:
+			self.ui.label_2.setText('<img src="./img/novolume.png" />')
+		elif self.volume > 1:
+			self.ui.label_2.setText('<img src="./img/volume.png" />')
+		if not self.is_stop:			
+			self._playback.set_volume(self.volume)
 
 	def keyPressEvent(self, e):		
 		if e.key() == Qt.Key_Escape:
@@ -214,10 +231,13 @@ class Play(QtCore.QThread):
 
 	def run(self):				
 		uri = helpers.search.get_youtube_streams(self.id)
-		self.playback.play(uri['audio'])
+		self.playback.play(uri['audio'], self.parent.volume)
 
 	def pause(self):
 		self.playback.pause()
+
+	def set_volume(self, value):
+		self.playback.player.audio_set_volume(value)
 
 	def stop(self):
 		self.playback.stop()
