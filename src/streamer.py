@@ -5,7 +5,7 @@ from PyQt5 import QtCore
 class Streamer():
 	
 	def __init__(self, *data):
-		self.vlcInstance = vlc.Instance("--no-xlib --verbose 2")
+		self.vlcInstance = vlc.Instance("--no-xlib")
 		self.player = self.vlcInstance.media_player_new()
 		event_manager = self.player.event_manager() # Attach event to player (next 3 lines)
 		event=vlc.EventType()
@@ -21,7 +21,6 @@ class Streamer():
 		self.player.stop()
 
 	def pause(self):
-		print('sd')
 		self.player.pause()
 
 	def unpause(self):
@@ -38,5 +37,5 @@ class Streamer():
 		m.release()
 		self.player.play()
 		while self.flag_stop == True: # Wait until the end of the first media has been reached...
-			self.quit()
+			self.stop()		
 			return

@@ -56,6 +56,8 @@ class YAudio(QtWidgets.QMainWindow):
 
 		self.ui.actionsd.triggered.connect(partial(helpers.gui.open_about, self=self))
 
+		self.quene_tracks = []
+
 	def changePosition(self, value):
 		if not self.is_stop:
 			self.check_position_t.stop()
@@ -105,9 +107,26 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_3.setEnabled(False)
 		search_tracks = Search(self, keywords, next)
 
-	def updateProgress(self, proc, full):		
-		self.ui.horizontalSlider.setValue(proc*1000.0)
-		m, s = divmod(int(full / 1000), 60)
+	def next_track(self):		
+		if self.np in self.quene_tracks:
+			i = 0
+			for _ in self.quene_tracks:
+				if self.np == _:
+					try:
+						# self.np = self.quene_tracks[i+1]										
+						self._play(self.quene_tracks[i+1], self._get_np_button())
+						return
+					except Exception as e:
+						return					
+				i = i + 1
+
+	def updateProgress(self, position, time, length):				
+		if time > 1 and length == time:
+			self._stop(terminate=False)
+			self.next_track()
+
+		self.ui.horizontalSlider.setValue(position*1000.0)
+		m, s = divmod(int(time / 1000), 60)
 		if s >= 1:
 			# if not paused, not change icons 
 			if not self.is_pause:
@@ -115,8 +134,7 @@ class YAudio(QtWidgets.QMainWindow):
 			self.ui.pushButton_2.setEnabled(True)
 			self.ui.pushButton.setEnabled(True)
 		h, m = divmod(m, 60)
-		con_time_human = "%02d:%02d:%02d" % (h, m, s)
-
+		con_time_human = "%02d:%02d:%02d" % (h, m, s)		
 		self.ui.label.setText(con_time_human)
 
 	def add_tracks_from_search(self, title, id, last=False):
@@ -134,6 +152,10 @@ class YAudio(QtWidgets.QMainWindow):
 		self.label.setToolTip(title)
 		hbox_player.addWidget(self.pushButton_4)
 		hbox_player.addWidget(self.label)
+		self.quene_tracks.append(id)
+
+		print(self.quene_tracks)
+
 		if last == True:
 			self.hbox_last_container = QtWidgets.QHBoxLayout()
 			self.vbox.addLayout(self.hbox_last_container)
@@ -151,15 +173,15 @@ class YAudio(QtWidgets.QMainWindow):
 			return self.nowPlaying
 		return None
 
-	def _play(self, id, widget):
+	def _play(self, id, widget):		
 		# check if track active
 		if id == self.np:
 			self._pause()
-			return
+			return		
 		self.is_pause = False
-		self.np = id
+		self.np = id		
 		if self.is_stop == False:
-			self._stop()
+			self._stop()		
 
 		self.ui.horizontalSlider.setEnabled(True)
 		self.ui.horizontalSlider.setMaximum(1000)
@@ -189,7 +211,7 @@ class YAudio(QtWidgets.QMainWindow):
 			helpers.gui.change_icon_button(self.ui.pushButton_2, 'fa.pause')
 			
 
-	def _stop(self):
+	def _stop(self, terminate=True):
 		try:
 			np_b = self._get_np_button()
 			np_b.setEnabled(True)
@@ -198,16 +220,16 @@ class YAudio(QtWidgets.QMainWindow):
 			pass
 	
 		helpers.gui.change_icon_button(self.ui.pushButton_2, 'fa.play')
+		self.ui.pushButton_2.setEnabled(False)
 		self.ui.horizontalSlider.setValue(0)
 		self.ui.label.setText(self.defaultTime)
 		self.is_stop = True
 		self.check_position_t.stop()
 		self._playback.stop()
-		return	
 
 
 class Play(QtCore.QThread):	
-	sig = QtCore.pyqtSignal(float, int)
+	sig = QtCore.pyqtSignal(float, int, int)
 
 	def __init__(self, parent=None, *data):
 		super(Play, self).__init__(parent)	
@@ -221,9 +243,11 @@ class Play(QtCore.QThread):
 		self.playback = Streamer(self.parent.volume)
 		self.start()
 
-	def run(self):				
+	def run(self):						
 		uri = helpers.search.get_youtube_streams(self.id)
 		self.playback.play(uri)
+		if self.parent.is_stop == True:
+			self.__del__()
 
 	def pause(self):
 		self.playback.pause()
@@ -234,15 +258,19 @@ class Play(QtCore.QThread):
 	def set_position(self, value):
 		self.playback.player.set_position(value)
 
-	def stop(self):
-		self.playback.stop()
-		self.terminate()
+	def stop(self, terminate=True):
+		self.playback.stop()		
 		return
 
 	def _get_position(self):
-		length = self.playback.player.get_position()
-		full_length = self.playback.player.get_time()
-		self.sig.emit(length, full_length)
+		position = self.playback.player.get_position()
+		time = self.playback.player.get_time()
+		length = self.playback.player.get_length()
+		self.sig.emit(position, time, length)
+
+	def __del__(self):
+		self.quit()
+		self.wait()
 			
 
 class Search(QtCore.QThread):
