@@ -1,6 +1,7 @@
 import sys
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QMessageBox, QFrame
+from PyQt5.QtWidgets import (QApplication, QWidget, QInputDialog, 
+	QLineEdit, QMessageBox, QFrame)
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, Qt
 import os
@@ -21,6 +22,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.vbox = QtWidgets.QVBoxLayout(self.ui.scrollAreaWidgetContents)
 
 		self.ui.pushButton_3.clicked.connect(partial(self._search_music, clear=True))
+		self.ui.pushButton_2.clicked.connect(self._pause)
 		self.ui.pushButton.clicked.connect(self._stop)
 
 		self.len_title_text = 80
@@ -30,6 +32,7 @@ class YAudio(QtWidgets.QMainWindow):
 
 		self.is_stop = True
 		self.is_pause = False
+		self.np = None
 
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(False)
@@ -72,8 +75,10 @@ class YAudio(QtWidgets.QMainWindow):
 		if s >= 1:
 			np_btn = self._get_np_button()
 			np_btn.setEnabled(True)
-			self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
-			self.change_icon_button(np_btn, qta.icon('fa.pause'))
+			# if not paused, not change icons 
+			if not self.is_pause:
+				self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
+				self.change_icon_button(np_btn, qta.icon('fa.pause'))
 			self.ui.pushButton_2.setEnabled(True)
 			self.ui.pushButton.setEnabled(True)
 		h, m = divmod(m, 60)
@@ -90,12 +95,14 @@ class YAudio(QtWidgets.QMainWindow):
 	def add_tracks_from_search(self, title, id, last=False):
 		hbox_player = QtWidgets.QHBoxLayout()
 		self.vbox.addLayout(hbox_player)
-		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, 
+			QtWidgets.QSizePolicy.Fixed)
 		self.pushButton_4 = QtWidgets.QPushButton()
 		self.pushButton_4.setSizePolicy(sizePolicy)
 		self.pushButton_4.setIcon(qta.icon('fa.play'))
-		self.pushButton_4.setIconSize(QtCore.QSize(24, 24))		
-		self.pushButton_4.clicked.connect(partial(self._play, id=id, widget=self.pushButton_4))
+		self.pushButton_4.setIconSize(QtCore.QSize(24, 24))	
+		self.pushButton_4.clicked.connect(partial(self._play, id=id, 
+			widget=self.pushButton_4))
 		title_cut = helpers.text.truncate(title, self.len_title_text).strip()
 		self.label = QtWidgets.QLabel(title_cut)
 		self.label.setToolTip(title)
@@ -128,6 +135,12 @@ class YAudio(QtWidgets.QMainWindow):
 		return None
 
 	def _play(self, id, widget):
+		# check if track active
+		if id == self.np:
+			self._pause()
+			return
+		self.is_pause = False
+		self.np = id
 		if self.is_stop == False:
 			self._stop()
 		self.ui.pushButton_2.setEnabled(False)
@@ -143,8 +156,17 @@ class YAudio(QtWidgets.QMainWindow):
 		self.check_position_t.start()
 
 	def _pause(self):
-		if not self.is_stop:
-			pass
+		np_b = self._get_np_button()
+		if not self.is_stop and not self.is_pause:
+			self._playback.pause()
+			self.is_pause = True			
+			self.change_icon_button(np_b, qta.icon('fa.play'))
+			self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.play'))
+		elif not self.is_stop and self.is_pause:
+			self._playback.playback.unpause()
+			self.is_pause = False
+			self.change_icon_button(np_b, qta.icon('fa.pause'))
+			self.change_icon_button(self.ui.pushButton_2, qta.icon('fa.pause'))
 			
 
 	def _stop(self):
@@ -184,6 +206,9 @@ class Play(QtCore.QThread):
 	def run(self):				
 		uri = helpers.search.get_youtube_streams(self.id)
 		self.playback.play(uri['audio'])
+
+	def pause(self):
+		self.playback.pause()
 
 	def stop(self):
 		self.playback.stop()

@@ -20,7 +20,11 @@ class Streamer():
 		self.player.stop()
 
 	def pause(self):
-		pass
+		print('sd')
+		self.player.pause()
+
+	def unpause(self):
+		self.player.play()
 
 	def get_position(self):
 		return self.player.get_position()
