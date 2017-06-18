@@ -11,6 +11,7 @@ class Streamer():
 		event=vlc.EventType()
 		event_manager.event_attach(event.MediaPlayerStopped, self.end_reached)
 		self.flag_stop = False
+		self.volume = data[0]
 
 	def end_reached(self, *data):
 		self.flag_stop = True
@@ -29,12 +30,11 @@ class Streamer():
 	def get_position(self):
 		return self.player.get_position()
 
-	def play(self, uri, volume):
-		print('play')
+	def play(self, uri):
 		m=self.vlcInstance.media_new(uri)
 		
 		self.player.set_media(m)
-		self.player.audio_set_volume(volume)
+		self.player.audio_set_volume(int(self.volume))
 		m.release()
 		self.player.play()
 		while self.flag_stop == True: # Wait until the end of the first media has been reached...

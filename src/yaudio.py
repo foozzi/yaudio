@@ -218,12 +218,12 @@ class Play(QtCore.QThread):
 		self.parent.is_stop = False
 
 		self.sig.connect(self.parent.updateProgress)
-		self.playback = Streamer()
+		self.playback = Streamer(self.parent.volume)
 		self.start()
 
 	def run(self):				
 		uri = helpers.search.get_youtube_streams(self.id)
-		self.playback.play(uri['audio'], self.parent.volume)
+		self.playback.play(uri)
 
 	def pause(self):
 		self.playback.pause()

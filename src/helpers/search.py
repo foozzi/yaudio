@@ -1,6 +1,8 @@
 import re
 import subprocess
-from lxml import html as html_
+import lxml.html
+import os
+import pafy
 from furl import furl
 
 from .encryption import get_key, encode_data
@@ -23,14 +25,10 @@ def exe(command):
 
 def get_youtube_streams(id):
     url = 'https://www.youtube.com/watch?v=%s' % id
-    cli = "./youtube-dl -g {}".format(url)
-    output, error = exe(cli)
+    video = pafy.new(url)
+    audio = video.getbestaudio()
 
-    stream_urls = output.split("\n")
-    url = {}
-    url['audio'] = stream_urls[1]
-    url['video'] = stream_urls[0]
-    return url
+    return audio.url
 
 def html_unescape(text):
     """
@@ -54,7 +52,7 @@ def get_search_results_html(search_term, next=False):
     return raw_html
 
 def get_n_page(html):
-    n_page = html_.fromstring(html)
+    n_page = lxml.html.fromstring(html)
     page_items = n_page.xpath('//div[contains(@class, "search-pager")]/a[position()>=1 and position()<=last()]/.')
     n_page = n_page.xpath('//div[contains(@class, "search-pager")]/a[position()>=1 and position()<=last()]/.')[len(page_items)-1].attrib['href']
     f = furl(n_page) 
@@ -67,7 +65,7 @@ def get_videos(html):
     n_page = get_n_page(html)
     html = html.decode('utf-8')
     first = html.find('yt-lockup-tile')
-   
+    
     html = html[first + 2:]
     vid = []
     while True:
