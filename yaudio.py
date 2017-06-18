@@ -7,11 +7,18 @@ from PyQt5.QtCore import QTimer, Qt
 import os
 # template main
 import main
+import about
 import helpers.search
 import helpers.text
 from streamer import Streamer
 from functools import partial
 import qtawesome as qta
+
+class About(QtWidgets.QDialog) :
+    def __init__(self, parent):
+        super(About, self).__init__(parent)
+        self.ui = about.Ui_Form()
+        self.ui.setupUi(self)
 
 class YAudio(QtWidgets.QMainWindow):
 	def __init__(self):
@@ -47,6 +54,8 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.pushButton_2.setEnabled(False)
 		self.ui.pushButton.setEnabled(False)
 		self.ui.horizontalSlider.setEnabled(False)
+
+		self.ui.actionsd.triggered.connect(self.open_about)
 
 	def changePosition(self, value):
 		if not self.is_stop:
@@ -223,6 +232,11 @@ class YAudio(QtWidgets.QMainWindow):
 				animation=qta.Spin(widget))
 		widget.setIcon(icon)
 		widget.setIconSize(QtCore.QSize(24, 24))
+
+	def open_about(self):
+		about_ = About(self)
+		about_.exec()
+
 
 class Play(QtCore.QThread):	
 	sig = QtCore.pyqtSignal(float, int)

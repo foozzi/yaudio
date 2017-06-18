@@ -109,9 +109,15 @@ class Ui_MainWindow(object):
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 568, 23))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 568, 22))
         self.menubar.setObjectName("menubar")
+        self.menuAbout = QtWidgets.QMenu(self.menubar)
+        self.menuAbout.setObjectName("menuAbout")
         MainWindow.setMenuBar(self.menubar)
+        self.actionsd = QtWidgets.QAction(MainWindow)
+        self.actionsd.setObjectName("actionsd")
+        self.menuAbout.addAction(self.actionsd)
+        self.menubar.addAction(self.menuAbout.menuAction())
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -122,4 +128,6 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "00:00:00"))
         self.lineEdit.setPlaceholderText(_translate("MainWindow", "Typing search words"))
         self.label_2.setText(_translate("MainWindow", "Volume"))
+        self.menuAbout.setTitle(_translate("MainWindow", "Help"))
+        self.actionsd.setText(_translate("MainWindow", "About"))
 

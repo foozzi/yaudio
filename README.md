@@ -4,7 +4,7 @@ Audio player for youtube streaming with search by keywords [dev. preview!] 📻 
 ## Screenshots
 ![screen-1](http://i.imgur.com/yYYIpUI.png)
 
-### version 0.0.4a [dev. preview]
+### version 0.0.5a [dev. preview]
 
 ### run
 Requirements: **python3**

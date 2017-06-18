@@ -7,3 +7,5 @@ include/
 pip-selfcheck.json
 main.ui
 main2.py
+about.ui
+images.qrc
