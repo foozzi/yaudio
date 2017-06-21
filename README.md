@@ -16,3 +16,4 @@ python yaudio.py
 ### know issue
  - crash when quickly click new tracks 
 (https://github.com/spyder-ide/qtawesome/issues/76)
+ - not change icon button play when auto next playing 
