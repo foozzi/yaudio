@@ -5,6 +5,7 @@ furl==1.0.0
 idna==2.5
 lxml==3.8.0
 orderedmultidict==0.7.11
+pafy==0.5.3.1
 PyQt5==5.8.2
 QtAwesome==0.4.4
 QtPy==1.2.1
@@ -12,3 +13,4 @@ requests==2.18.1
 sip==4.19.2
 six==1.10.0
 urllib3==1.21.1
+youtube-dl==2017.6.18

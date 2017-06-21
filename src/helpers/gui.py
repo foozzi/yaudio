@@ -6,10 +6,10 @@ import about
 
 ''' about dialog '''
 class About(QtWidgets.QDialog) :
-    def __init__(self, parent):
-        super(About, self).__init__(parent)
-        self.ui = about.Ui_Form()
-        self.ui.setupUi(self)
+	def __init__(self, parent):
+		super(About, self).__init__(parent)
+		self.ui = about.Ui_Form()
+		self.ui.setupUi(self)
 
 def error_modal(message, title):
 	msg = QMessageBox()
@@ -34,7 +34,7 @@ def clearLayout(layout):
 def change_icon_button(widget, icon_str=None, spin=False):
 	if spin == True:
 		icon = qta.icon('fa.spinner',
-			animation=qta.Spin(widget))
+		animation=qta.Spin(widget))
 	else :
 		icon = qta.icon(icon_str)
 	widget.setIcon(icon)

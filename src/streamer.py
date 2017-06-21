@@ -15,7 +15,6 @@ class Streamer():
 
 	def end_reached(self, *data):
 		self.flag_stop = True
-		print("End reached!")
 
 	def stop(self):
 		self.player.stop()
