@@ -4,13 +4,15 @@ Audio player for youtube streaming with search by keywords [dev. preview!] 📻 
 ## Screenshots
 ![screen-1](http://i.imgur.com/yYYIpUI.png)
 
-### version 0.0.7a [dev. preview]
+### version 0.0.8a [dev. preview]
 
 ### run
-Requirements: **python3**
+Requirements: **python3** and **libvlc** or you can just install vlc 
+player
 ```bash
 pip install -r requirements.txt
 python yaudio.py
 ```
-
-
+### know issue
+ - crash when quickly click new tracks 
+(https://github.com/spyder-ide/qtawesome/issues/76)
