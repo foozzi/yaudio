@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QInputDialog,
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, Qt
 from functools import partial
+import html
 # template main
 import main
 # helpers
@@ -19,6 +20,7 @@ import configparser
 class YAudio(QtWidgets.QMainWindow):
 	def __init__(self):
 		super(YAudio,self).__init__()
+		self.setWindowIcon(QtGui.QIcon('./img/Youtube.png'))
 		self.ui = main.Ui_MainWindow()
 		self.ui.setupUi(self)
 
@@ -118,6 +120,7 @@ class YAudio(QtWidgets.QMainWindow):
 				continue
 			try:				
 				# @TODO change _get_nowplay_button to really now play button for new track
+				
 				self._play(self.quene_tracks[index + 1], self._get_nowplay_button())			
 			finally:
 				return		
@@ -125,6 +128,7 @@ class YAudio(QtWidgets.QMainWindow):
 	def updateProgress(self, position, time, length):				
 		if time > 1 and length == time:					
 			self._stop()
+
 			self.next_track()
 
 		self.ui.horizontalSlider.setValue(position*1000.0)
@@ -139,7 +143,7 @@ class YAudio(QtWidgets.QMainWindow):
 			con_time_human = "%02d:%02d:%02d" % (h, m, s)	
 			self.ui.label.setText(con_time_human)		
 
-	def add_tracks_from_search(self, title, id, last=False):
+	def add_tracks_from_search(self, title, id, length, last=False):
 		hbox_player = QtWidgets.QHBoxLayout()
 		self.vbox.addLayout(hbox_player)
 		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, 
@@ -149,11 +153,16 @@ class YAudio(QtWidgets.QMainWindow):
 		helpers.gui.change_icon_button(self.track_play_btn, 'fa.play')
 		self.track_play_btn.clicked.connect(partial(self._play, id=id, 
 			widget=self.track_play_btn))
-		title_cut = helpers.text.truncate(title, int(self.len_title_text)).strip()
+		title_cut = html.unescape(helpers.text.truncate(title, 
+			int(self.len_title_text)).strip())
 		self.label = QtWidgets.QLabel(title_cut)
-		self.label.setToolTip(title)
+		self.label.setToolTip(html.unescape(title))
+		self.label_time_track = QtWidgets.QLabel(length)
+		self.label_time_track.setToolTip(length)
+		self.label_time_track.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
 		hbox_player.addWidget(self.track_play_btn)
 		hbox_player.addWidget(self.label)
+		hbox_player.addWidget(self.label_time_track)
 		self.quene_tracks.append(id)
 
 		if last == True:
@@ -276,7 +285,7 @@ class Play(QtCore.QThread):
 			
 
 class Search(QtCore.QThread):
-	sig = QtCore.pyqtSignal(str, str, bool)
+	sig = QtCore.pyqtSignal(str, str, str, bool)
 
 	def __init__(self, parent=None, *data):
 		super(Search, self).__init__(parent)
@@ -309,7 +318,7 @@ class Search(QtCore.QThread):
 			i = i + 1
 			if i == len_vids:
 				last = True	
-			self.sig.emit(_['title'], _['id'], last)				
+			self.sig.emit(_['title'], _['id'], _['length'], last)				
 
 		self.parent.ui.search_btn.setEnabled(True)
 
