@@ -112,18 +112,19 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.search_btn.setEnabled(False)
 		search_tracks = Search(self, keywords, next)
 
-	def next_track(self):	
+	def next_track(self):			
 		for index, track in enumerate(self.quene_tracks):
 			if self.np != track:
 				continue
-			try:
+			try:				
+				# @TODO change _get_nowplay_button to really now play button for new track
 				self._play(self.quene_tracks[index + 1], self._get_nowplay_button())			
 			finally:
 				return		
 
 	def updateProgress(self, position, time, length):				
-		if time > 1 and length == time:
-			self._stop(terminate=False)
+		if time > 1 and length == time:					
+			self._stop()
 			self.next_track()
 
 		self.ui.horizontalSlider.setValue(position*1000.0)
@@ -181,7 +182,6 @@ class YAudio(QtWidgets.QMainWindow):
 		self.is_pause = False
 		self.np = id		
 		if self.is_stop == False:
-			print('1')
 			helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.play')
 			self._stop()					
 
@@ -213,7 +213,7 @@ class YAudio(QtWidgets.QMainWindow):
 			helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.pause')
 			
 
-	def _stop(self, terminate=True):
+	def _stop(self):
 		try:
 			np_b = self._get_nowplay_button()
 			np_b.setEnabled(True)
@@ -260,7 +260,7 @@ class Play(QtCore.QThread):
 	def set_position(self, value):
 		self.playback.player.set_position(value)
 
-	def stop(self, terminate=True):
+	def stop(self):
 		self.playback.stop()		
 		return
 
