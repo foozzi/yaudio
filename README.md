@@ -14,6 +14,10 @@ player
 pip install -r requirements.txt
 python yaudio.py
 ```
+### Donate
+You can help for development ;)
+Bitcoin: **1ByHNKGvmgqVikow7NzK9YGzFhBaPX4TnQ**
+
 ### know issue
  - ~~~crash when quickly click new tracks (https://github.com/spyder-ide/qtawesome/issues/76)~~~
  - not change icon button play when auto next playing 
