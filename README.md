@@ -2,7 +2,8 @@
 Audio player for youtube streaming with search by keywords [dev. preview!] 📻 :octocat: 
 
 ## Screenshots
-![screen-1](http://i.imgur.com/yYYIpUI.png)
+![screen-1](http://i.imgur.com/eUenzBQl.png)
+![screen-2](http://i.imgur.com/IwNumanl.png)
 
 ### version 0.0.10a [dev. preview]
 
