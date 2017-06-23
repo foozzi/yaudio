@@ -11,8 +11,6 @@ Requirements: **python3** and **libvlc** or you can just install vlc
 player
 ```bash
 pip install -r requirements.txt
-pip install https://github.com/foozzi/qtawesome/archive/patch-1.zip (my patch for fix one bug, look 
-https://github.com/spyder-ide/qtawesome/issues/76)
 python yaudio.py
 ```
 ### know issue
