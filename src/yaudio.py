@@ -96,12 +96,7 @@ class YAudio(QtWidgets.QMainWindow):
 		next = False
 
 		# if load more, not clean playlist
-		if clear == True:
-			# clear icon from the current track,
-			# couse that call error update animateion
-			np_b = self._get_nowplay_button()
-			if np_b:
-				np_b.setIcon(QtGui.QIcon())
+		if clear == True:			
 			helpers.gui.clearLayout(self.vbox)			
 		else:
 			next = True
