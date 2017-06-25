@@ -1,6 +1,8 @@
 # YAudio
 [![Code 
 Climate](https://codeclimate.com/github/foozzi/yaudio/badges/gpa.svg)](https://codeclimate.com/github/foozzi/yaudio)
+
+
 Audio player for youtube streaming with search by keywords [dev. preview!] 📻 :octocat: 
 
 ## Screenshots
