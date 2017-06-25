@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QInputDialog,
 	QLineEdit, QFrame)
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, Qt
-from functools import partial
 import html
 # template main
 import main
@@ -29,7 +28,7 @@ class YAudio(QtWidgets.QMainWindow):
 
 		self.vbox = QtWidgets.QVBoxLayout(self.ui.scrollAreaWidgetContents)
 
-		self.ui.search_btn.clicked.connect(partial(self._search_music, clear=True))
+		self.ui.search_btn.clicked.connect(lambda: self._search_music(clear=True))
 		self.ui.play_pause_btn.clicked.connect(self._pause)
 		self.ui.stop_btn.clicked.connect(self._stop)
 
@@ -60,7 +59,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.horizontalSlider.setEnabled(False)
 
 		# trigger for open about page from top menu
-		self.ui.actionsd.triggered.connect(partial(helpers.gui.open_about, self=self))
+		self.ui.actionsd.triggered.connect(lambda: helpers.gui.open_about(self=self))
 
 		# arr quene track for playing
 		self.quene_tracks = []
@@ -114,8 +113,7 @@ class YAudio(QtWidgets.QMainWindow):
 			if self.np != track:
 				continue
 			try:				
-				# @TODO change _get_nowplay_button to really now play button for new track
-				
+				# @TODO change _get_nowplay_button to really now play button for new track				
 				self._play(self.quene_tracks[index + 1], self._get_nowplay_button())			
 			finally:
 				return		
@@ -146,8 +144,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.track_play_btn = QtWidgets.QPushButton()
 		self.track_play_btn.setSizePolicy(sizePolicy)
 		helpers.gui.change_icon_button(self.track_play_btn, 'fa.play')
-		self.track_play_btn.clicked.connect(partial(self._play, id=id, 
-			widget=self.track_play_btn))
+		self.track_play_btn.clicked.connect(lambda: self._play(id=id))
 		title_cut = html.unescape(helpers.text.truncate(title, 
 			int(self.len_title_text)).strip())
 		self.label = QtWidgets.QLabel(title_cut)
@@ -164,8 +161,7 @@ class YAudio(QtWidgets.QMainWindow):
 			self.hbox_last_container = QtWidgets.QHBoxLayout()
 			self.vbox.addLayout(self.hbox_last_container)
 			self.loadmore_btn = QtWidgets.QPushButton("Load More")
-			self.loadmore_btn.clicked.connect(
-				partial(self._search_music, clear=False))
+			self.loadmore_btn.clicked.connect(lambda: self._search_music(clear=False))
 			self.hbox_last_container.addWidget(self.loadmore_btn)
 
 
@@ -177,7 +173,7 @@ class YAudio(QtWidgets.QMainWindow):
 			return self.nowPlaying
 		return None
 
-	def _play(self, id, widget):		
+	def _play(self, id):		
 		# check if track active
 		if id == self.np:
 			self._pause()
@@ -193,10 +189,10 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.horizontalSlider.setMaximum(1000)
 		self.ui.play_pause_btn.setEnabled(False)
 		self.ui.stop_btn.setEnabled(True)
-		widget.setEnabled(False)
-		widget.setFlat(True)		
+		self.sender().setEnabled(False)
+		self.sender().setFlat(True)		
 		helpers.gui.change_icon_button(self.ui.play_pause_btn, spin=True)
-		self._set_nowplay_button(widget)
+		self._set_nowplay_button(self.sender())
 		self._playback = Play(self, id)
 		self.check_position_t = QTimer(self)
 		self.check_position_t.timeout.connect(self._playback._get_position)
