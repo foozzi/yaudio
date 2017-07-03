@@ -7,7 +7,7 @@ class Streamer():
 	def __init__(self, *data):
 		self.vlcInstance = vlc.Instance("--no-xlib")
 		self.player = self.vlcInstance.media_player_new()
-		event_manager = self.player.event_manager() # Attach event to player (next 3 lines)
+		event_manager = self.player.event_manager() # Attach event to player (next 2 lines)
 		event=vlc.EventType()
 		event_manager.event_attach(event.MediaPlayerStopped, self.end_reached)
 		self.flag_stop = False
