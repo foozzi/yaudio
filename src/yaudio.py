@@ -7,6 +7,7 @@ from PyQt5.QtCore import QTimer, Qt
 from requests import get
 from pathlib import Path
 import html
+from functools import partial
 # template main
 import main
 # helpers
@@ -66,6 +67,12 @@ class YAudio(QtWidgets.QMainWindow):
 		# arr quene track for playing
 		self.quene_tracks = []
 
+		# arr button tracks
+		self.button_tracks = []
+
+		# last search keyword
+		self.last_search_keyword = None
+
 	def changePosition(self, value):
 		if not self.is_stop:
 			self.check_position_t.stop()
@@ -110,21 +117,31 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.search_btn.setEnabled(False)
 		search_tracks = Search(self, keywords, next)
 
-	def next_track(self):			
+	def next_track(self):				
+		self.get_next_button()
 		for index, track in enumerate(self.quene_tracks):
 			if self.np != track:
 				continue
 			try:				
-				# @TODO change _get_nowplay_button to really now play button for new track				
+				# @TODO change _get_nowplay_button to really now play button for new track							
 				self._play(self.quene_tracks[index + 1], self._get_nowplay_button())			
 			finally:
-				return		
+				return
+
+	def get_next_button(self):
+		for index, button in enumerate(self.button_tracks):
+			if self._get_nowplay_button() != button:
+				continue
+			try:
+				self._set_nowplay_button(self.button_tracks[index + 1])			
+			finally:
+				return
 
 	def updateProgress(self, position, time, length):				
 		if time > 1 and length == time:					
 			self._stop()
-
 			self.next_track()
+			return
 
 		self.ui.horizontalSlider.setValue(position*1000.0)
 		m, s = divmod(int(time / 1000), 60)
@@ -138,7 +155,11 @@ class YAudio(QtWidgets.QMainWindow):
 			con_time_human = "%02d:%02d:%02d" % (h, m, s)	
 			self.ui.label.setText(con_time_human)		
 
-	def add_tracks_from_search(self, title, id, length, last=False):
+	def add_tracks_from_search(self, title, id, length, last=False, new_search=False):
+		# if not "load more"
+		if new_search == True:
+			self.quene_tracks = []
+			self.button_tracks = []
 		hbox_player = QtWidgets.QHBoxLayout()
 		self.vbox.addLayout(hbox_player)
 		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, 
@@ -146,7 +167,8 @@ class YAudio(QtWidgets.QMainWindow):
 		self.track_play_btn = QtWidgets.QPushButton()
 		self.track_play_btn.setSizePolicy(sizePolicy)
 		helpers.gui.change_icon_button(self.track_play_btn, 'fa.play')
-		self.track_play_btn.clicked.connect(lambda: self._play(id=id))
+		self.track_play_btn.clicked.connect(partial(self._play, id=id,
+			widget=self.track_play_btn))
 		title_cut = html.unescape(helpers.text.truncate(title, 
 			int(self.len_title_text)).strip())
 		self.label = QtWidgets.QLabel(title_cut)
@@ -154,10 +176,12 @@ class YAudio(QtWidgets.QMainWindow):
 		self.label_time_track = QtWidgets.QLabel(length)
 		self.label_time_track.setToolTip(length)
 		self.label_time_track.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+		# add button to arr
+		self.button_tracks.append(self.track_play_btn)
+		self.quene_tracks.append(id)
 		hbox_player.addWidget(self.track_play_btn)
 		hbox_player.addWidget(self.label)
-		hbox_player.addWidget(self.label_time_track)
-		self.quene_tracks.append(id)
+		hbox_player.addWidget(self.label_time_track)		
 
 		if last == True:
 			self.hbox_last_container = QtWidgets.QHBoxLayout()
@@ -175,7 +199,7 @@ class YAudio(QtWidgets.QMainWindow):
 			return self.nowPlaying
 		return None
 
-	def _play(self, id):		
+	def _play(self, id, widget):
 		# check if track active
 		if id == self.np:
 			self._pause()
@@ -191,10 +215,10 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.horizontalSlider.setMaximum(1000)
 		self.ui.play_pause_btn.setEnabled(False)
 		self.ui.stop_btn.setEnabled(True)
-		self.sender().setEnabled(False)
-		self.sender().setFlat(True)		
+		widget.setEnabled(False)
+		widget.setFlat(True)		
 		helpers.gui.change_icon_button(self.ui.play_pause_btn, spin=True)
-		self._set_nowplay_button(self.sender())
+		self._set_nowplay_button(widget)
 		self._playback = Play(self, id)
 		self.check_position_t = QTimer(self)
 		self.check_position_t.timeout.connect(self._playback._get_position)
@@ -216,20 +240,16 @@ class YAudio(QtWidgets.QMainWindow):
 			
 
 	def _stop(self):
-		try:
-			np_b = self._get_nowplay_button()
-			np_b.setEnabled(True)
-			np_b.setFlat(False)
-		except Exception as e:
-			pass
-	
+		np_b = self._get_nowplay_button()
+		np_b.setEnabled(True)
+		np_b.setFlat(False)
 		helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.play')
 		self.ui.play_pause_btn.setEnabled(False)
 		self.ui.horizontalSlider.setValue(0)
 		self.ui.label.setText(self.defaultTime)
 		self.is_stop = True
 		self.check_position_t.stop()
-		self._playback.stop()
+		self._playback.stop()		
 
 
 class Play(QtCore.QThread):	
@@ -292,7 +312,7 @@ class Play(QtCore.QThread):
 			
 
 class Search(QtCore.QThread):
-	sig = QtCore.pyqtSignal(str, str, str, bool)
+	sig = QtCore.pyqtSignal(str, str, str, bool, bool)
 
 	def __init__(self, parent=None, *data):
 		super(Search, self).__init__(parent)
@@ -300,7 +320,12 @@ class Search(QtCore.QThread):
 		self.parent = parent
 		self.sig.connect(self.parent.add_tracks_from_search)
 
+		self.new_search = False		
 		self.keyword = data[0]
+		if self.parent.last_search_keyword != None \
+			and self.parent.last_search_keyword != self.keyword:
+			self.new_search = True
+		self.parent.last_search_keyword = self.keyword
 		self.next = data[1]
 		self.start()
 
@@ -325,7 +350,7 @@ class Search(QtCore.QThread):
 			i = i + 1
 			if i == len_vids:
 				last = True	
-			self.sig.emit(_['title'], _['id'], _['length'], last)				
+			self.sig.emit(_['title'], _['id'], _['length'], last, self.new_search)				
 
 		self.parent.ui.search_btn.setEnabled(True)
 
