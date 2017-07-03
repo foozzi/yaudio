@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QInputDialog,
 	QLineEdit, QFrame)
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QTimer, Qt
+from requests import get
+from pathlib import Path
 import html
 # template main
 import main
@@ -246,10 +248,24 @@ class Play(QtCore.QThread):
 		self.start()
 
 	def run(self):						
-		uri = helpers.search.get_youtube_streams(self.id)
-		self.playback.play(uri)
+		uri = helpers.search.get_youtube_streams(self.id)		
+		self.playback.play(self.cached(uri))
 		if self.parent.is_stop == True:
 			self.__del__()
+
+	def cached(self, url, folder="cached", bin="binary"):
+		import os
+		if not os.path.exists(folder):
+			os.makedirs(folder)
+		path = folder + '/' + bin
+		my_file = Path(path)
+		if my_file.is_file():			
+			os.remove(path)
+
+		with open(path, "wb") as file:
+			response = get(url)
+			file.write(response.content)
+		return path
 
 	def pause(self):
 		self.playback.pause()
@@ -268,7 +284,7 @@ class Play(QtCore.QThread):
 		position = self.playback.player.get_position()
 		time = self.playback.player.get_time()
 		length = self.playback.player.get_length()
-		self.sig.emit(position, time, length)
+		self.sig.emit(position, time, length)	
 
 	def __del__(self):
 		self.quit()

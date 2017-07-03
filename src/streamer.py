@@ -1,5 +1,4 @@
 import vlc
-import requests
 from PyQt5 import QtCore
 
 class Streamer():
