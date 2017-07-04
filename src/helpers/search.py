@@ -23,12 +23,16 @@ def exe(command):
 	error = error.decode('utf-8').strip()
 	return (output, error)
 
-def get_youtube_streams(id):
+def get_youtube_streams(id, path):
+	if not os.path.exists(path):
+		os.makedirs(path)
 	url = 'https://www.youtube.com/watch?v=%s' % id
 	video = pafy.new(url)
 	audio = video.getbestaudio()
+	name = 'cache.%s' % audio.extension
+	audio.download(filepath=path + name)
 
-	return audio.url
+	return audio.url, name
 
 def html_unescape(text):
 	"""
@@ -54,6 +58,9 @@ def get_search_results_html(search_term, next=False):
 def get_n_page(html):
 	n_page = lxml.html.fromstring(html)
 	page_items = n_page.xpath('//div[contains(@class, "search-pager")]/a[position()>=1 and position()<=last()]/.')
+	if len(page_items) < 1:
+		return None
+	# @TODO fix empty search content
 	n_page = n_page.xpath('//div[contains(@class, "search-pager")]/a[position()>=1 and position()<=last()]/.')[len(page_items)-1].attrib['href']
 	f = furl(n_page) 
 	return f.args['sp']
@@ -63,6 +70,8 @@ def get_videos(html):
 	separate videos in html
 	"""
 	n_page = get_n_page(html)
+	if n_page == None:
+		return None, None
 	html = html.decode('utf-8')
 	first = html.find('yt-lockup-tile')
 	

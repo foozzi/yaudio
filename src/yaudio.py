@@ -73,6 +73,9 @@ class YAudio(QtWidgets.QMainWindow):
 		# last search keyword
 		self.last_search_keyword = None
 
+		# cache dir
+		self.cache_dir = './cached/'
+
 	def changePosition(self, value):
 		if not self.is_stop:
 			self.check_position_t.stop()
@@ -137,7 +140,7 @@ class YAudio(QtWidgets.QMainWindow):
 			finally:
 				return
 
-	def updateProgress(self, position, time, length):				
+	def updateProgress(self, position, time, length):	
 		if time > 1 and length == time:					
 			self._stop()
 			self.next_track()
@@ -222,7 +225,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self._playback = Play(self, id)
 		self.check_position_t = QTimer(self)
 		self.check_position_t.timeout.connect(self._playback._get_position)
-		self.check_position_t.setInterval(1000)
+		self.check_position_t.setInterval(999)
 		self.check_position_t.start()
 
 	def _pause(self):
@@ -268,25 +271,11 @@ class Play(QtCore.QThread):
 		self.start()
 
 	def run(self):						
-		uri = helpers.search.get_youtube_streams(self.id)		
-		self.playback.play(self.cached(uri))
+		uri, file = helpers.search.get_youtube_streams(self.id, self.parent.cache_dir)
+		self.playback.play(self.parent.cache_dir + file)
 		if self.parent.is_stop == True:
 			self.__del__()
-
-	def cached(self, url, folder="cached", bin="binary"):
-		import os
-		if not os.path.exists(folder):
-			os.makedirs(folder)
-		path = folder + '/' + bin
-		my_file = Path(path)
-		if my_file.is_file():			
-			os.remove(path)
-
-		with open(path, "wb") as file:
-			response = get(url)
-			file.write(response.content)
-		return path
-
+	
 	def pause(self):
 		self.playback.pause()
 
@@ -332,7 +321,10 @@ class Search(QtCore.QThread):
 	def run(self):
 		raw_html = helpers.search.get_search_results_html(
 			self.keyword, False if not self.next else self.parent.n_page)		
-		vids, self.parent.n_page = helpers.search.get_videos(raw_html)				
+		vids, self.parent.n_page = helpers.search.get_videos(raw_html)			
+		if vids == None:
+			self.parent.ui.search_btn.setEnabled(True)
+			return None	
 		# flag for last track
 		last = False
 		
