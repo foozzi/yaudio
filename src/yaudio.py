@@ -126,7 +126,6 @@ class YAudio(QtWidgets.QMainWindow):
 			if self.np != track:
 				continue
 			try:				
-				# @TODO change _get_nowplay_button to really now play button for new track							
 				self._play(self.quene_tracks[index + 1], self._get_nowplay_button())			
 			finally:
 				return
