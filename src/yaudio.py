@@ -244,15 +244,21 @@ class YAudio(QtWidgets.QMainWindow):
 
 	def _stop(self):
 		np_b = self._get_nowplay_button()
-		np_b.setEnabled(True)
-		np_b.setFlat(False)
-		helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.play')
-		self.ui.play_pause_btn.setEnabled(False)
-		self.ui.horizontalSlider.setValue(0)
-		self.ui.label.setText(self.defaultTime)
-		self.is_stop = True
-		self.check_position_t.stop()
-		self._playback.stop()		
+		# if button "now play" is deleted
+		try:
+			np_b.setEnabled(True)
+			np_b.setFlat(False)	
+		except Exception as e:
+			pass		
+		finally:
+			helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.play')
+			self.ui.play_pause_btn.setEnabled(False)		
+			self.ui.horizontalSlider.setValue(0)
+			self.ui.horizontalSlider.setEnabled(False)
+			self.ui.label.setText(self.defaultTime)
+			self.is_stop = True
+			self.check_position_t.stop()
+			self._playback.stop()		
 
 
 class Play(QtCore.QThread):	
