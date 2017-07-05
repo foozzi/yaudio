@@ -9,7 +9,7 @@ Audio player for youtube streaming with search by keywords [dev. preview!] 📻 
 ![screen-1](http://i.imgur.com/eUenzBQl.png)
 ![screen-2](http://i.imgur.com/IwNumanl.png)
 
-### version 0.0.14a
+### version 0.0.15a
 
 ### run
 Requirements: **python3** and **libvlc** or you can just install vlc 
