@@ -38,4 +38,4 @@ def change_icon_button(widget, icon_str=None, spin=False):
 	else :
 		icon = qta.icon(icon_str)
 	widget.setIcon(icon)
-	widget.setIconSize(QtCore.QSize(24, 24))
+	# widget.setIconSize(QtCore.QSize(24, 24))

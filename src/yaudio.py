@@ -8,23 +8,27 @@ from requests import get
 from pathlib import Path
 import html
 from functools import partial
-# template main
+# pyqt main
 import main
-# helpers
+
 import helpers.search
 import helpers.text
 import helpers.gui
-# player wrapper
-from streamer import Streamer
-import configparser
 
+from streamer import Streamer
+
+import configparser
+import requests
+import os
 
 class YAudio(QtWidgets.QMainWindow):
+	sig_new_track = QtCore.pyqtSignal(str)
+
 	def __init__(self):
 		super(YAudio,self).__init__()
 		self.setWindowIcon(QtGui.QIcon('./img/Youtube.png'))
-		self.ui = main.Ui_MainWindow()
-		self.ui.setupUi(self)
+		self.ui = main2.Ui_MainWindow()
+		self.ui.setupUi(self)		
 
 		parser = configparser.ConfigParser()
 		parser.read('config.cfg')
@@ -46,6 +50,8 @@ class YAudio(QtWidgets.QMainWindow):
 		self.is_pause = False
 		# current now play track id
 		self.np = None
+		# last current now play track id
+		self.last_np = None
 
 		# volume slider
 		self.ui.verticalSlider.setValue(int(self.volume))
@@ -62,7 +68,7 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.horizontalSlider.setEnabled(False)
 
 		# trigger for open about page from top menu
-		self.ui.actionsd.triggered.connect(lambda: helpers.gui.open_about(self=self))
+		self.ui.actionHelp.triggered.connect(lambda: helpers.gui.open_about(self=self))
 
 		# arr quene track for playing
 		self.quene_tracks = []
@@ -75,6 +81,7 @@ class YAudio(QtWidgets.QMainWindow):
 
 		# cache dir
 		self.cache_dir = './cached/'
+
 
 	def changePosition(self, value):
 		if not self.is_stop:
@@ -122,6 +129,7 @@ class YAudio(QtWidgets.QMainWindow):
 
 	def next_track(self):				
 		self.get_next_button()
+
 		for index, track in enumerate(self.quene_tracks):
 			if self.np != track:
 				continue
@@ -148,6 +156,8 @@ class YAudio(QtWidgets.QMainWindow):
 		self.ui.horizontalSlider.setValue(position*1000.0)
 		m, s = divmod(int(time / 1000), 60)
 		if s >= 1:
+			self.ui.horizontalSlider.setEnabled(True)
+			self.ui.horizontalSlider.setMaximum(1000)
 			# if not paused, not change icons 
 			if not self.is_pause:
 				helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.pause')
@@ -201,20 +211,19 @@ class YAudio(QtWidgets.QMainWindow):
 			return self.nowPlaying
 		return None
 
-	def _play(self, id, widget):
+	def _play(self, id, widget):				
 		# check if track active
 		if id == self.np:
 			self._pause()
 			return		
 
 		self.is_pause = False
+
 		self.np = id		
 		if self.is_stop == False:
 			helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.play')
-			self._stop()					
+			self._stop()
 
-		self.ui.horizontalSlider.setEnabled(True)
-		self.ui.horizontalSlider.setMaximum(1000)
 		self.ui.play_pause_btn.setEnabled(False)
 		self.ui.stop_btn.setEnabled(True)
 		widget.setEnabled(False)
@@ -222,9 +231,12 @@ class YAudio(QtWidgets.QMainWindow):
 		helpers.gui.change_icon_button(self.ui.play_pause_btn, spin=True)
 		self._set_nowplay_button(widget)
 		self._playback = Play(self, id)
+		if self.last_np != None and self.last_np != self.np:
+			self._playback._set_lock_load()
+		self.last_np = id		
 		self.check_position_t = QTimer(self)
 		self.check_position_t.timeout.connect(self._playback._get_position)
-		self.check_position_t.setInterval(999)
+		self.check_position_t.setInterval(1000)
 		self.check_position_t.start()
 
 	def _pause(self):
@@ -243,6 +255,7 @@ class YAudio(QtWidgets.QMainWindow):
 
 	def _stop(self):
 		np_b = self._get_nowplay_button()
+		self._playback._set_lock_load()
 		# if button "now play" is deleted
 		try:
 			np_b.setEnabled(True)
@@ -257,8 +270,8 @@ class YAudio(QtWidgets.QMainWindow):
 			self.ui.label.setText(self.defaultTime)
 			self.is_stop = True
 			self.check_position_t.stop()
-			self._playback.stop()		
-
+			self._playback.stop()
+			self._playback.quit()			
 
 class Play(QtCore.QThread):	
 	sig = QtCore.pyqtSignal(float, int, int)
@@ -267,7 +280,10 @@ class Play(QtCore.QThread):
 		super(Play, self).__init__(parent)	
 
 		self.parent = parent
-		self.id = data[0]		
+		self.id = data[0]
+
+		# block and delete download audio binary if play new track
+		self.lock_audio_load = False
 
 		self.parent.is_stop = False
 
@@ -275,11 +291,38 @@ class Play(QtCore.QThread):
 		self.playback = Streamer(self.parent.volume)
 		self.start()
 
-	def run(self):						
-		uri, file = helpers.search.get_youtube_streams(self.id, self.parent.cache_dir)
-		self.playback.play(self.parent.cache_dir + file)
+	def run(self):				
+		self._set_unlock_load()		
+		uri, ext = helpers.search.get_youtube_streams(self.id, self.parent.cache_dir)
+		full_dir = self.parent.cache_dir + 'cache.%s' % ext
+		if os.path.isfile(full_dir):
+			os.remove(full_dir)
+		f = open(full_dir, 'wb')
+		r = requests.get(uri, stream=True)
+		for data in r.iter_content(1024):
+			if not self._get_lock_load():
+				f.write(data)
+				if data == None:
+					break
+			else:
+				f.close()
+				os.remove(full_dir)
+				break
+		f.close()
+		if not self._get_lock_load():			
+			self.playback.play(full_dir)		
+
 		if self.parent.is_stop == True:
 			self.__del__()
+
+	def _set_lock_load(self):
+		self.lock_audio_load = True
+
+	def _set_unlock_load(self):
+		self.lock_audio_load = False
+
+	def _get_lock_load(self):
+		return self.lock_audio_load
 	
 	def pause(self):
 		self.playback.pause()
@@ -351,6 +394,7 @@ class Search(QtCore.QThread):
 
 		self.parent.ui.search_btn.setEnabled(True)
 
+QApplication.setDesktopSettingsAware(False)
 app = QtWidgets.QApplication(sys.argv)
 
 my_mainWindow = YAudio()

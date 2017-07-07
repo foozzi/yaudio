@@ -9,7 +9,7 @@ Audio player for youtube streaming with search by keywords 📻 :octocat:
 ![screen-1](http://i.imgur.com/eUenzBQl.png)
 ![screen-2](http://i.imgur.com/IwNumanl.png)
 
-### version 0.0.15a
+### version 0.1.0a (hurrah! first minor alpha version!)
 
 ### run
 Requirements: **python3** and **libvlc** or you can just install vlc 
@@ -23,5 +23,5 @@ You can help for development ;)
 Bitcoin: **1ByHNKGvmgqVikow7NzK9YGzFhBaPX4TnQ**
 
 ### know issue
- - some tracks freeze thread every 9-10 sec.
+ - nothing ;)
 

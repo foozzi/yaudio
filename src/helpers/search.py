@@ -29,10 +29,10 @@ def get_youtube_streams(id, path):
 	url = 'https://www.youtube.com/watch?v=%s' % id
 	video = pafy.new(url)
 	audio = video.getbestaudio()
-	name = 'cache.%s' % audio.extension
-	audio.download(filepath=path + name)
+	# name = 'cache.%s' % audio.extension
+	# audio.download(filepath=path + name)
 
-	return audio.url, name
+	return audio.url, audio.extension
 
 def html_unescape(text):
 	"""
