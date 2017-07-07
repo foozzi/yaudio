@@ -27,7 +27,7 @@ class YAudio(QtWidgets.QMainWindow):
 	def __init__(self):
 		super(YAudio,self).__init__()
 		self.setWindowIcon(QtGui.QIcon('./img/Youtube.png'))
-		self.ui = main2.Ui_MainWindow()
+		self.ui = main.Ui_MainWindow()
 		self.ui.setupUi(self)		
 
 		parser = configparser.ConfigParser()

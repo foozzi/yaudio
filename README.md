@@ -6,8 +6,8 @@ Climate](https://codeclimate.com/github/foozzi/yaudio/badges/gpa.svg)](https://c
 Audio player for youtube streaming with search by keywords 📻 :octocat: 
 
 ## Screenshots
-![screen-1](http://i.imgur.com/eUenzBQl.png)
-![screen-2](http://i.imgur.com/IwNumanl.png)
+![screen-1](http://i.imgur.com/H1GLb7o.png)
+![screen-2](http://i.imgur.com/DRfmxgQ.png)
 
 ### version 0.1.0a (hurrah! first minor alpha version!)
 
