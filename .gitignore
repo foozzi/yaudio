@@ -7,7 +7,6 @@ include/
 pip-selfcheck.json
 images.qrc
 yaudio.spec
-ui/
 main2.py
 etc/
 build/
