@@ -1,20 +1,12 @@
 from cx_Freeze import setup, Executable
-buildOptions = dict(
-	packages = [
-		'idna', 
-		'lxml', 
-		'qtawesome', 
-		'lxml', 
-		'furl', 
-		'requests', 
-		'queue', 
-		'pafy',
-		'about'		
-	], 
-	excludes = [	
-	],
-	includes=[], 
-	include_files=[])
+
+build_exe_options = {
+	'build_exe': 'build', 
+	'packages':{'idna', 'lxml', 'qtawesome', 'lxml', 'furl', 'requests', 'queue', 'pafy','vlc'},
+    'includes': {'about'},
+    'include_files': {'helpers'},
+	'optimize':2
+}
  
 import sys
 base = 'Win32GUI' if sys.platform=='win32' else None
@@ -25,8 +17,8 @@ executables = [
 
 setup(
     name='YAudio',
-    version = '0.1.0b',
+    version = '0.1.1b',
     description = 'Audio player for youtube streaming with search by keywords',
-    options = dict(build_exe = buildOptions),
+    options = dict(build_exe = build_exe_options),
     executables = executables
 )
