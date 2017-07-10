@@ -24,6 +24,9 @@ class Streamer():
 	def unpause(self):
 		self.player.play()
 
+	def is_playing(self):
+		return self.player.is_playing()
+
 	def play(self, uri):
 		m=self.vlcInstance.media_new(uri)
 		

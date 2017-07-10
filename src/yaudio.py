@@ -22,8 +22,6 @@ import requests
 import os
 
 class YAudio(QtWidgets.QMainWindow):
-	sig_new_track = QtCore.pyqtSignal(str)
-
 	def __init__(self):
 		super(YAudio,self).__init__()
 		self.setWindowIcon(QtGui.QIcon('./img/Youtube.png'))
@@ -147,17 +145,17 @@ class YAudio(QtWidgets.QMainWindow):
 			finally:
 				return
 
-	def updateProgress(self, position, time, length):	
-		if time > 1 and length == time:					
+	def updateProgress(self, position, time, length, is_playing):	
+		if time > 1 and not is_playing:					
 			self._stop()
 			self.next_track()
 			return
-
-		self.ui.horizontalSlider.setValue(position*1000.0)
+		
 		m, s = divmod(int(time / 1000), 60)
-		if s >= 1:
+		if is_playing:
 			self.ui.horizontalSlider.setEnabled(True)
 			self.ui.horizontalSlider.setMaximum(1000)
+			self.ui.horizontalSlider.setValue(position*1000.0)
 			# if not paused, not change icons 
 			if not self.is_pause:
 				helpers.gui.change_icon_button(self.ui.play_pause_btn, 'fa.pause')
@@ -274,7 +272,7 @@ class YAudio(QtWidgets.QMainWindow):
 			self._playback.quit()			
 
 class Play(QtCore.QThread):	
-	sig = QtCore.pyqtSignal(float, int, int)
+	sig = QtCore.pyqtSignal(float, int, int, bool)
 
 	def __init__(self, parent=None, *data):
 		super(Play, self).__init__(parent)	
@@ -341,7 +339,8 @@ class Play(QtCore.QThread):
 		position = self.playback.player.get_position()
 		time = self.playback.player.get_time()
 		length = self.playback.player.get_length()
-		self.sig.emit(position, time, length)	
+		is_playing = self.playback.is_playing()
+		self.sig.emit(position, time, length, is_playing)	
 
 	def __del__(self):
 		self.quit()
