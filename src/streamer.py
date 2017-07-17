@@ -34,6 +34,6 @@ class Streamer():
 		self.player.audio_set_volume(int(self.volume))
 		m.release()
 		self.player.play()
-		while self.flag_stop == True:
+		if self.flag_stop:
 			self.stop()
 			return

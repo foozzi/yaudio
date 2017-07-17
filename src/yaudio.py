@@ -146,7 +146,7 @@ class YAudio(QtWidgets.QMainWindow):
 				return
 
 	def updateProgress(self, position, time, length, is_playing):	
-		if time > 1 and not is_playing:					
+		if time > 1 and not is_playing and not self.is_pause:				
 			self._stop()
 			self.next_track()
 			return
