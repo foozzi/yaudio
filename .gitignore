@@ -12,3 +12,5 @@ etc/
 build/
 src/cached/
 venv/
+.DS_Store
+

@@ -9,7 +9,8 @@ Audio player for youtube streaming with search by keywords 📻 :octocat:
 ![screen-1](http://i.imgur.com/H1GLb7o.png)
 ![screen-2](http://i.imgur.com/DRfmxgQ.png)
 
-### version 0.1.2b
+### version 0.1.3b
+Now support MacOS and Linux distros.
 
 ### run
 Requirements: **python3** and **libvlc** or you can just install vlc 
